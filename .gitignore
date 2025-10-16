@@ -1,0 +1,17 @@
+# Cocos Creator
+library/
+local/
+temp/
+build/
+log/
+node_modules/
+*.log
+.DS_Store
+
+# IDE caches
+.idea/
+.vscode/
+
+# System
+Thumbs.db
+
