@@ -15,6 +15,8 @@ export class UploadManager extends Component {
     private _lastMime = 'image/jpeg';
     private _lastName = 'photo.jpg';
 
+    private SERVER_URL = 'http://localhost:8000/analyze';
+
     onLoad() {
         // iOS 原生拍照成功后，回调此全局函数并传入图片本地路径
         (globalThis as any).OnPhotoSelected = async (path: string) => {
@@ -47,16 +49,24 @@ export class UploadManager extends Component {
             const file: File = input.files![0];
             const blobURL = URL.createObjectURL(file);
 
-            try {
+            //try {
                 await this.setSpriteFromURL(blobURL);  // 显示到 Sprite（下面给实现）
                 // 不要打印整段 dataURL，想看就打印 file.name/size/type 即可
                 console.log('picked:', file.name, file.type, file.size, 'bytes');
-              } catch (e) {
-                console.error('preview error:', e);
-              } finally {
-                // 2) 用完释放
-                URL.revokeObjectURL(blobURL);
-              }
+                const form = new FormData();
+                form.append('image', file); // 必须叫 'image'
+
+                const res = await fetch('http://localhost:8000/segment/summary', {
+                  method: 'POST',
+                  body: form,
+                });
+                if (!res.ok) {
+                  // 这里后端会把 LogMeal 的错误码转发出来（如 401/429）
+                  const msg = await res.text();
+                  throw new Error(msg);
+                }
+                console.log(res.json());
+              //};
         };
         input.click();
     }
@@ -88,13 +98,13 @@ export class UploadManager extends Component {
         // 让图片保持原始比例
         const size = tex.image?.width && tex.image?.height 
         ? { width: tex.image.width, height: tex.image.height }
-        : { width: 1000, height: 400 }; // 默认
+        : { width: 1300, height: 900 }; // 默认
 
         const node = this.imageSprite.node;
         const aspect = size.width / size.height;
 
-        // 例如希望高度固定为 400（或根据屏幕调整）
-        const targetHeight = 400;
+        // 例如希望高度固定为 900（或根据屏幕调整）
+        const targetHeight = 900;
         node.getComponent(UITransform)!.setContentSize(targetHeight * aspect, targetHeight);
     }
 
